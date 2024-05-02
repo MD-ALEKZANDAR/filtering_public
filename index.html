@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title>Mapbox + GeoJSON</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <link rel='stylesheet' href='https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css'>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.css' rel='stylesheet' />
+    <!-- Bootstrap JS -->
+    <script src='https://code.jquery.com/jquery-3.5.1.slim.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js'></script>
+    <script src='https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js'></script>
+
+    <!-- Mapbox JS -->
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.js'></script>
+    
+    <style>
+        body { margin: 0; padding: 0; }
+        #map {height:700px; top: 0; bottom: 0; width: 100%; }
+    </style>
+</head>
+<body>
+
+    <div class='container-fluid'>
+        <div class='row'>
+            <div class='col-md-3'>
+                <div class='col-md-12'>
+                    <!-- First search box -->
+                    <form>
+                        <div class='form-group'>
+                            <label for='propertySelect'>Select Property:</label>
+                            <!-- Dropdown for selecting properties -->
+                            <select class='form-control' id='propertySelect'>
+                                <!-- Options will be added dynamically -->
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class='col-md-12'>
+                    <!-- Second search box -->
+                    <form>
+                        <div class='form-group'>
+                            <label for='dimensionSelect'>Selected Property Values:</label>
+                            <!-- Dropdown to display selected property values -->
+                            <select class='form-control' id='dimensionSelect'>
+                                <!-- Options will be added dynamically -->
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class='col-md-12'>
+                    <!-- Search button -->
+                    <button type='button' class='btn btn-primary' id='searchButton'>Search</button>
+                </div>
+            </div>
+            <div class='col-md-9'>
+                <!-- Map container -->
+                <div id='map-container'>
+                    <div id='map'></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+
+<script>
+    mapboxgl.accessToken = 'pk.eyJ1IjoibWRhbGVremFuZGFyIiwiYSI6ImNra3VsNG9mejB1c2QyeG1zYW9kYXhpMWsifQ.BTJFyY0AWR6nFY6EoZC8nw';
+    
+    var map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/satellite-v9', // Image baselayer style
+        center: [-75.968687, 46.385942], // Center of the map
+        zoom:15// Zoom level
+    });
+    
+    map.on('load', function () {
+        // Add plot line GeoJSON layer
+        map.addSource('plot-line-geojson-data', {
+            type: 'geojson',
+            data: 'plot_line.geojson' // Path to your plot line GeoJSON file
+        });
+    
+        map.addLayer({
+            'id': 'plot-line-geojson-layer',
+            'type': 'line',
+            'source': 'plot-line-geojson-data',
+            'layout': {},
+            'paint': {
+                'line-color': 'black',
+                'line-width': 2
+            }
+        });
+    
+        // Add road line GeoJSON layer
+        map.addSource('road-line-geojson-data', {
+            type: 'geojson',
+            data: 'Road_line.geojson' // Path to your road line GeoJSON file
+        });
+    
+        map.addLayer({
+            'id': 'road-line-geojson-layer',
+            'type': 'line',
+            'source': 'road-line-geojson-data',
+            'layout': {},
+            'paint': {
+                'line-color': 'red', // Adjust color as needed
+                'line-width': 3
+            }
+        });
+    
+        // Add river GeoJSON layer
+        map.addSource('river-geojson-data', {
+            type: 'geojson',
+            data: 'river.geojson' // Path to your river GeoJSON file
+        });
+    
+        map.addLayer({
+            'id': 'river-geojson-layer',
+            'type': 'line',
+            'source': 'river-geojson-data',
+            'layout': {},
+            'paint': {
+                'line-color': 'blue', // Adjust color as needed
+                'line-width': 3
+            }
+        });
+    
+        // Add toilets GeoJSON layer
+        map.addSource('toilets-geojson-data', {
+            type: 'geojson',
+            data: 'amenities.geojson' // Path to your toilets GeoJSON file
+        });
+    
+        map.addLayer({
+            'id': 'toilets-geojson-layer',
+            'type': 'line',
+            'source': 'toilets-geojson-data',
+            'layout': {},
+            'paint': {
+                'line-color': '#a2b9bc', // Adjust color as needed
+                'line-width': 2
+            }
+        });
+    
+      // Add point GeoJSON layer
+        map.addSource('point-geojson-data', {
+            type: 'geojson',
+            data: 'point.geojson' // Path to your point GeoJSON file
+        });
+
+        // Add a layer to display the point features
+        map.addLayer({
+            'id': 'point-geojson-layer',
+            'type': 'symbol',
+            'source': 'point-geojson-data',
+            'layout': {
+                'text-field': [
+                    'format',
+                    ['get', 'Name'],
+                    { 'font-scale': 0.8 },
+                    '\n',
+                    ['get', 'FolderPath'], // Add FolderPath property as a label
+                    { 'font-scale': 0.8 },
+                    '\n', 'Service ',
+                    ['get', 'SymbolID'] // Add SymbolID property as a label
+                ], 
+                'text-font': ['Arial Unicode MS Regular'], // Specify the font family
+                'text-size': 14,
+                'text-anchor': 'top' // Adjust text anchor position as needed
+            },
+            'paint': {
+                'text-color': 'maroon' // Label text color
+            }
+        });
+
+    });
+    
+      // Function to fetch point.geojson and extract property values
+    function loadPropertyValues(property) {
+        fetch('point.geojson')
+            .then(response => response.json())
+            .then(data => {
+                const values = data.features.map(feature => feature.properties[property]);
+                const dimensionSelect = document.getElementById('dimensionSelect');
+                // Clear existing options
+                dimensionSelect.innerHTML = '';
+                // Add options for each property value
+                values.forEach(value => {
+                    const option = document.createElement('option');
+                    option.value = value;
+                    option.textContent = value;
+                    dimensionSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching point.geojson:', error);
+            });
+    }
+
+    // Event listener for property select change
+    const propertySelect = document.getElementById('propertySelect');
+    propertySelect.addEventListener('change', function() {
+        const selectedProperty = this.value;
+        // Call loadPropertyValues function to update dimensionSelect
+        loadPropertyValues(selectedProperty);
+    });
+
+    // Function to dynamically populate property dropdown
+    function loadPointProperties() {
+        const properties = ['SymbolID', 'FolderPath', 'Name']; // List of properties
+        const selectElement = document.getElementById('propertySelect');
+
+        // Add options for each property
+        properties.forEach(property => {
+            const option = document.createElement('option');
+            option.value = property;
+            option.textContent = property;
+            selectElement.appendChild(option);
+        });
+    }
+
+    // Call the function to load point properties
+    loadPointProperties();
+
+ // Event listener for search button click
+const searchButton = document.getElementById('searchButton');
+let popup = null; // Initialize popup variable
+
+searchButton.addEventListener('click', async function() {
+    const selectedValue = document.getElementById('dimensionSelect').value;
+    // Implement code to display selected value on the map
+    const data = await fetch('point.geojson').then(response => response.json());
+    const features = data.features.filter(feature => feature.properties[document.getElementById('propertySelect').value] === selectedValue);
+    if (features.length > 0) {
+        const coordinates = features[0].geometry.coordinates;
+        // Close the previous popup if it exists
+        if (popup) {
+            popup.remove();
+        }
+        // Create a new popup
+        popup = new mapboxgl.Popup()
+            .setLngLat(coordinates)
+            .setHTML(`<h3>${selectedValue}</h3>`)
+            .addTo(map);
+        // Fly to the selected feature's coordinates and set a zoom level
+        map.flyTo({ center: coordinates, zoom: 15 });
+    }
+});
+
+
+</script>
+
+</body>
+</html>
